@@ -52,7 +52,7 @@ func (giiClient *GiiClient) DownloadTOC(ctx context.Context) (*TOC, error) {
 	return &toc, err
 }
 
-// DownloadTOCItems downloads the table of contents (TOC) items from the gesetze-im-internet.de website,  and returns them as a slice of strings.
+// DownloadTOCItems downloads the table of contents (TOC) items and returns them as a slice of *Root.
 func (giiClient *GiiClient) DownloadTOCItems(ctx context.Context, toc *TOC) ([]*Root, error) {
 
 	if toc == nil || len(toc.Items) == 0 {
@@ -62,7 +62,7 @@ func (giiClient *GiiClient) DownloadTOCItems(ctx context.Context, toc *TOC) ([]*
 	var roots []*Root
 
 	for _, item := range toc.Items {
-		rootItems, err := giiClient.DownloadTOCItem(ctx, item)
+		rootItems, err := giiClient.downloadTOCItem(ctx, item)
 		if err != nil {
 			return nil, err
 		}
@@ -73,7 +73,11 @@ func (giiClient *GiiClient) DownloadTOCItems(ctx context.Context, toc *TOC) ([]*
 	return roots, nil
 }
 
-func (giiClient *GiiClient) DownloadTOCItem(ctx context.Context, item TOCItem) ([]*Root, error) {
+func (giiClient *GiiClient) downloadTOCItem(ctx context.Context, item TOCItem) ([]*Root, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+
 	var roots []*Root
 	// 1. download the zip file from the link
 	zipReq, _ := http.NewRequestWithContext(ctx, http.MethodGet, item.Link, nil)
@@ -90,7 +94,7 @@ func (giiClient *GiiClient) DownloadTOCItem(ctx context.Context, item TOCItem) (
 
 	// 2. find the XML files in the zip
 	for _, file := range files {
-		root, err := giiClient.ReadXMLRootFile(ctx, file)
+		root, err := giiClient.readXMLRootFile(ctx, file)
 		if err != nil {
 			return nil, err
 		}
@@ -100,7 +104,11 @@ func (giiClient *GiiClient) DownloadTOCItem(ctx context.Context, item TOCItem) (
 	return roots, nil
 }
 
-func (giiClient *GiiClient) ReadXMLRootFile(ctx context.Context, file *zip.File) (*Root, error) {
+func (giiClient *GiiClient) readXMLRootFile(ctx context.Context, file *zip.File) (*Root, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+
 	if file.FileInfo().IsDir() {
 		return nil, fmt.Errorf("file is a directory: %s", file.Name)
 	}
@@ -128,99 +136,3 @@ func (giiClient *GiiClient) ReadXMLRootFile(ctx context.Context, file *zip.File)
 
 	return &root, nil
 }
-
-// 	// work with first item
-// 	item := toc.Items[0]
-
-// 	// download the zip file from the link
-// 	zipFile, err := os.Create("file.zip")
-// 	if err != nil {
-// 		fmt.Println("Error creating zip file:", err)
-// 		return nil
-// 	}
-// 	defer zipFile.Close()
-
-// 	// use http.Get to download the file
-// 	resp, err := http.Get(item.Link)
-// 	if err != nil {
-// 		fmt.Println("Error downloading file:", err)
-// 		return nil
-// 	}
-// 	defer resp.Body.Close()
-
-// 	_, err = io.Copy(zipFile, resp.Body)
-// 	if err != nil {
-// 		fmt.Println("Error saving zip file:", err)
-// 		return nil
-// 	}
-// 	// unzip the file and read the XML file inside
-// 	Unzip("file.zip", "unzipped")
-
-// 	// get first file in unzipped folder
-// 	files, err := os.ReadDir("unzipped")
-// 	if err != nil {
-// 		fmt.Println("Error reading unzipped folder:", err)
-// 		return nil
-// 	}
-
-// 	if len(files) == 0 {
-// 		fmt.Println("No files found in unzipped folder")
-// 		return nil
-// 	}
-
-// 	// get the first file in the unzipped folder
-// 	firstFile := files[0]
-// 	fmt.Println("First file in unzipped folder:", firstFile.Name())
-
-// 	// unmarshal the XML file into a struct
-// 	xmlFile, err := os.Open("unzipped/" + firstFile.Name())
-// 	if err != nil {
-// 		fmt.Println("Error opening XML file:", err)
-// 		return nil
-// 	}
-
-// 	defer xmlFile.Close()
-
-// 	xmlData, err = io.ReadAll(xmlFile)
-// 	if err != nil {
-// 		fmt.Println("Error reading XML file:", err)
-// 		return nil
-// 	}
-
-// 	var root Root
-// 	err = xml.Unmarshal(xmlData, &root)
-// 	if err != nil {
-// 		fmt.Println("Error unmarshalling XML:", err)
-// 		return nil
-// 	}
-
-// 	var allChunks []StoredChunk
-// 	chunkCfg := ChunkConfig{
-// 		TargetTokens:  250,
-// 		MaxTokens:     320,
-// 		OverlapTokens: 40,
-// 		MinTokens:     80,
-// 	}
-
-// 	for _, norm := range root.Norm {
-// 		title := norm.Metadaten.Titel
-// 		if title == "" {
-// 			title = norm.Metadaten.Langue
-// 		}
-// 		if title == "" {
-// 			continue
-// 		}
-
-// 		// build chunks from paragraphs
-// 		chunks := BuildChunksFromParagraphs(norm.Doknr, title, norm.Textdaten.Text.Content.P, chunkCfg)
-// 		if len(chunks) == 0 {
-// 			continue
-// 		}
-
-// 		// embed all chunks
-// 		chunks = EmbedChunks(context.Background(), embeddingClient, chunks)
-// 		allChunks = append(allChunks, chunks...)
-// 	}
-
-// 	return allChunks
-// }
