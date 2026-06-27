@@ -20,10 +20,3 @@ func WithBaseAddress(baseAddress string) GiiClientOption {
 	}
 }
 
-func WithWorkDir(workDir string) GiiClientOption {
-	return func(client *GiiClient) {
-		if workDir != "" {
-			client.workDir = workDir
-		}
-	}
-}

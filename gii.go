@@ -11,70 +11,15 @@ import (
 	"time"
 )
 
-type TOCItem struct {
-	Title string `xml:"title"`
-	Link  string `xml:"link"`
-}
-
-type TOC struct {
-	Items []TOCItem `xml:"item"`
-}
-
-type Root struct {
-	Builddate int    `xml:"builddate,attr"` // XML attribute
-	Doknr     string `xml:"doknr,attr"`     // XML attribute
-	Norm      []Norm `xml:"norm"`           // XML element (array)
-}
-type Norm struct {
-	Builddate int       `xml:"builddate,attr"` // XML attribute
-	Doknr     string    `xml:"doknr,attr"`     // XML attribute
-	Metadaten Metadaten `xml:"metadaten"`      // XML element
-	Textdaten Textdaten `xml:"textdaten"`      // XML element
-}
-type Textdaten struct {
-	Text      Text      `xml:"text"`      // XML element
-	Fussnoten Fussnoten `xml:"fussnoten"` // XML element
-}
-type Fussnoten struct {
-	Content Content `xml:"Content"` // XML element
-}
-type Text struct {
-	Format  string  `xml:"format,attr"` // XML attribute
-	Content Content `xml:"Content"`     // XML element
-}
-type Content struct {
-	P []string `xml:"P"` // XML element
-}
-type Metadaten struct {
-	Jurabk            string     `xml:"jurabk"`             // XML element
-	AusfertigungDatum string     `xml:"ausfertigung-datum"` // XML element
-	Fundstelle        Fundstelle `xml:"fundstelle"`         // XML element
-	Langue            string     `xml:"langue"`             // XML element
-	Enbez             string     `xml:"enbez"`              // XML element
-	Titel             string     `xml:"titel"`              // XML element
-}
-type Fundstelle struct {
-	Typ        string `xml:"typ,attr"`   // XML attribute
-	Periodikum string `xml:"periodikum"` // XML element
-	Zitstelle  string `xml:"zitstelle"`  // XML element
-}
-
-type TOCEntry struct {
-	Title string
-	Link  string
-}
-
 type GiiClient struct {
 	httpclient  *http.Client
 	baseAddress string
-	workDir     string
 }
 
 func NewGiiClient(opts ...GiiClientOption) *GiiClient {
 	client := &GiiClient{
 		httpclient:  &http.Client{Timeout: 3 * time.Minute},
 		baseAddress: "https://www.gesetze-im-internet.de",
-		workDir:     "./temp",
 	}
 
 	for _, opt := range opts {
